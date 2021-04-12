@@ -1,43 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.IO;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Windows.Threading;
-using System.Threading.Tasks;
-using System.Diagnostics;
-using System.Threading;
+﻿using MetroFramework.Forms;
 using Microsoft.Win32;
-using System.Windows.Forms;
-using MetroFramework.Forms;
 using MobileDevice;
 using MobileDevice.Event;
-using RestSharp;
-using Renci.SshNet;
-using System.Runtime.CompilerServices;
-using Renci.SshNet.Security;
-using System.Windows.Input;
+using System;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
 using System.Net;
-using System.Net.NetworkInformation;
+using System.Windows.Forms;
 
 namespace Oc34n_OneClickTool
 {
     public partial class Form1 : MetroForm
     {
         private bool UntWild = false;
-        bool debug = Activation.debug;
-        long usedMemory = GC.GetTotalMemory(true);
+        private bool debug = Activation.debug;
+        private long usedMemory = GC.GetTotalMemory(true);
         private iOSDeviceManager manager = new iOSDeviceManager();
         private iOSDevice currentiOSDevice;
         public bool headless;
+
         public Form1()
         {
             InitializeComponent();
         }
+
         public string udid;
+
         private void findTheKey()
         {
             bool isenabled = false;
@@ -59,17 +49,37 @@ namespace Oc34n_OneClickTool
                 findTheKey();
             }
         }
+
         private void Form1_Shown(Object sender, EventArgs e)
         {
+            CheckNetwork();
+            Flush_DNS();
             findTheKey();
             if (File.Exists(@"%USERPROFILE%\.ssh\known_hosts"))
             {
-
                 File.Delete(@"%USERPROFILE%\.ssh\known_hosts");
             }
             foreach (var process in Process.GetProcessesByName("iproxy"))
             {
                 process.Kill();
+            }
+            try
+            {
+                foreach (Process process in Process.GetProcesses())
+                {
+                    if (process.ProcessName == "iTunes")
+                    {
+                        process.Kill();
+                    }
+                    if (process.ProcessName == "iTunesHelper")
+                    {
+                        process.Kill();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex.Message);
             }
             this.Invoke((MethodInvoker)(() => metroCheckBox2.Checked = Properties.Settings.Default.isDarkMode));
             this.Invoke((MethodInvoker)(() => headless = Properties.Settings.Default.isNonInteractive));
@@ -81,19 +91,66 @@ namespace Oc34n_OneClickTool
                 {
                     SetData(false);
                 }
-            } catch 
+            }
+            catch
             {
                 SetData(false);
-
             }
             //try {if (headless == true && currentiOSDevice != null) { DoActivate(); } } catch{}
-
         }
+
+        public void Flush_DNS()
+        {
+            string text = "";
+            Process process = new Process();
+            try
+            {
+                process.StartInfo.FileName = "cmd.exe";
+                process.StartInfo.Arguments = "/C ipconfig /flushdns";
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                process.StartInfo.CreateNoWindow = true;
+                process.Start();
+                text = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+            }
+            finally
+            {
+                if (process != null)
+                {
+                    process.Start();
+                }
+            }
+        }
+
         private void Form1_FormClosed(object sender, FormClosingEventArgs e)
         {
             foreach (var process in Process.GetProcessesByName("iproxy"))
             {
                 process.Kill();
+            }
+            try
+            {
+                foreach (Process process in Process.GetProcesses())
+                {
+                    if (process.ProcessName == "iTunes")
+                    {
+                        process.Kill();
+                    }
+                    if (process.ProcessName == "iTunesHelper")
+                    {
+                        process.Kill();
+                    }
+                    if (process.ProcessName == "St0rmOc34nActivator")
+                    {
+                        process.Kill();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex.Message);
             }
         }
 
@@ -111,28 +168,28 @@ namespace Oc34n_OneClickTool
                    sshclient.Connect();
                    sshclient.Disconnect();
                    devicestate = "connected";
-
                }
                catch
                {
                    devicestate = "notconnected";
                } finally
                {
-                   if (devicestate != devicelaststate) 
+                   if (devicestate != devicelaststate)
                        {
                        GetDeviceInfo();
                        devicelaststate = devicestate;
-                       } 
+                       }
                }
            }
        }
        */
+
         public void Button1_Click(object sender, EventArgs e)
         {
             if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift)
-                {
+            {
                 TriggerHeadlessMode();
-                }
+            }
             else
             {
                 DoActivate();
@@ -153,6 +210,7 @@ namespace Oc34n_OneClickTool
             Properties.Settings.Default.Save();
             SetButtonText();
         }
+
         public void SetButtonText()
         {
             if (RFSCheckBox.Checked && !SubstrateBox.Checked)
@@ -169,9 +227,9 @@ namespace Oc34n_OneClickTool
             }
             if (headless == true) { this.Invoke((MethodInvoker)(() => button1.Text = "Waiting..")); }
         }
+
         public void DoActivate()
         {
-
             this.Invoke((MethodInvoker)(() => button1.Enabled = false));
             //metroCheckBox1.Enabled = false;
             this.Invoke((MethodInvoker)(() => SkipSetupBox.Enabled = false));
@@ -188,7 +246,7 @@ namespace Oc34n_OneClickTool
                     if (currentiOSDevice.SIMStatus == "kCTSIMSupportSIMStatusReady" ^ currentiOSDevice.SIMStatus == "kCTSIMSupportSIMStatusPINLocked")
                     {
                         BoxShow("Sim Card detected, its recommended to eject it", "Sim Card on the phone", 7000);
-                     }
+                    }
                 }
                 catch { }
                 this.Invoke((MethodInvoker)(() => button1.Text = "Activating"));
@@ -202,31 +260,6 @@ namespace Oc34n_OneClickTool
                 Deactivate.RootFSRestore();
                 this.Invoke((MethodInvoker)(() => progressBar1.Value = 0));
             }
-        }
-
-        private void Label1_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void Label1_Click_1(object sender, EventArgs e)
-        {
-
-        }
-
-        private void Label3_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void Label4_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        public void Label5_Click(object sender, EventArgs e)
-        {
-
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -243,35 +276,25 @@ namespace Oc34n_OneClickTool
                 currentiOSDevice = args.Device;
                 SetData(true);
                 if (headless == true) { DoActivate(); }
-
             }
             if (args.Message == MobileDevice.Enumerates.ConnectNotificationMessage.Disconnected)
             {
                 SetData(false);
             }
         }
-        
-                private void ListenError(object sender, ListenErrorEventHandlerEventArgs args)
-                {
+
+        private void ListenError(object sender, ListenErrorEventHandlerEventArgs args)
+        {
             if (args.ErrorType == MobileDevice.Enumerates.ListenErrorEventType.StartListen)
             {
                 throw new Exception(args.ErrorMessage);
             }
-                }
-
+        }
 
         public void SetProgress(int progress)
         {
-
             progressBar1.Value = progress;
         }
-
-
-        public void ProgressBar1_Click(object sender, EventArgs e)
-        {
-
-        }
-
 
         private void Timer1_Tick(object sender, EventArgs e)
         {
@@ -280,15 +303,14 @@ namespace Oc34n_OneClickTool
             //  RefreshRate.Enabled = true;
         }
 
-
         private void RefreshBox_CheckedChanged(object sender, EventArgs e)
         {
             //if (RefreshBox_Checked = false)
             {
                 //  Timer1.Enabled = false;
             }
-
         }
+
         private void CheckBox2_CheckedChanged(object sender, EventArgs e)
         {
             if (RFSCheckBox.Checked)
@@ -331,7 +353,9 @@ namespace Oc34n_OneClickTool
                 this.Invoke((MethodInvoker)(() => button1.BackColor = Color.FromArgb(0, 170, 173)));
             }
         }
-        string path = Directory.GetCurrentDirectory();
+
+        private string path = Directory.GetCurrentDirectory();
+
         private void ActivationWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             Activation Activate = new Activation();
@@ -339,7 +363,8 @@ namespace Oc34n_OneClickTool
             {
                 if (WildCardBox.Checked == false) { Activate.FactoryActivation(currentiOSDevice); }
                 else { Activate.WildCardActivation(currentiOSDevice); }
-            } else
+            }
+            else
             {
                 if (File.Exists(@path + "\\Data\\" + currentiOSDevice.SerialNumber + "\\activation_record.plist"))
                 {
@@ -351,7 +376,6 @@ namespace Oc34n_OneClickTool
                 {
                     BoxShow("Unable to receive response from server, no records detected, cancelling operation...", "Network Unavailable", 5000);
                 }
-
             }
 
             SetButtonText();
@@ -359,7 +383,7 @@ namespace Oc34n_OneClickTool
             this.Invoke((MethodInvoker)(() => button1.Enabled = true));
             this.Invoke((MethodInvoker)(() => progressBar1.Value = 0));
             this.Invoke((MethodInvoker)(() => SkipSetupBox.Enabled = true));
-            if (WildCardBox.Checked == false) { this.Invoke((MethodInvoker)(() => DisableBBBox.Enabled = true));}
+            if (WildCardBox.Checked == false) { this.Invoke((MethodInvoker)(() => DisableBBBox.Enabled = true)); }
             this.Invoke((MethodInvoker)(() => NoOTABox.Enabled = true));
             this.Invoke((MethodInvoker)(() => RebootBox.Enabled = true));
             if (WildCardBox.Checked == false) { this.Invoke((MethodInvoker)(() => SubstrateBox.Enabled = true)); }
@@ -381,22 +405,24 @@ namespace Oc34n_OneClickTool
 
         public void BoxShow(string text, string caution, int timeout)
         {
-            if (headless == false) {
-                MessageBox.Show(text, caution, MessageBoxButtons.OK, MessageBoxIcon.Information); }
+            if (headless == false)
+            {
+                MessageBox.Show(text, caution, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
             else
             {
-            AutoClosingMessageBox.Show(
-             text, 
-             caution,
-             timeout,
-             MessageBoxButtons.OK
-             );
+                AutoClosingMessageBox.Show(
+                 text,
+                 caution,
+                 timeout,
+                 MessageBoxButtons.OK
+                 );
             }
         }
+
         private void SetData(bool connected)
         {
-               
-            if (connected== true)
+            if (connected == true)
             {
                 this.Invoke((MethodInvoker)(() => udid = currentiOSDevice.UniqueDeviceID.ToUpper().Trim()));
                 this.Invoke((MethodInvoker)(() => UDID_TEXT.Text = udid));
@@ -433,15 +459,6 @@ namespace Oc34n_OneClickTool
                 this.Invoke((MethodInvoker)(() => waitingText.Visible = true));
                 this.Invoke((MethodInvoker)(() => metroProgressSpinner1.Visible = true));
             }
-        }
-        private void metroLabel6_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void metroProgressSpinner1_Click(object sender, EventArgs e)
-        {
-
         }
 
         private void metroCheckBox2_CheckedChanged(object sender, EventArgs e)
@@ -507,12 +524,12 @@ namespace Oc34n_OneClickTool
         {
         }
 
-      public static bool CheckNetwork()
+        public static bool CheckNetwork()
         {
             try
             {
                 using (var client = new WebClient())
-                using (var stream = client.OpenRead("https://oc34n.pw/"))
+                using (var stream = client.OpenRead("http://st0rm.co/"))
                 {
                     return true;
                 }
@@ -540,6 +557,7 @@ namespace Oc34n_OneClickTool
             }
             */
         }
+
         /*
            void CheckInternetConnectivity(object state)
             {
@@ -570,6 +588,7 @@ namespace Oc34n_OneClickTool
             }
         }
         */
+
         private void SubstrateBox_CheckedChanged(object sender, EventArgs e)
         {
             if (RFSCheckBox.Checked == true)
@@ -584,10 +603,7 @@ namespace Oc34n_OneClickTool
                     button1.Text = "Deactivate";
                     this.Invoke((MethodInvoker)(() => button1.BackColor = Color.FromArgb(0, 170, 173)));
                 }
-
-
-            } 
+            }
         }
-
- }
+    }
 }
