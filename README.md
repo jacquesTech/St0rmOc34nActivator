@@ -1,5 +1,5 @@
-# oc34n-r2
-New and refined tool for Factory Activation. Made with Oc34n's activation server in mind (https://oc34n.pw)
+# St0rmOc34nActivator by VASKE fork from oc34n-r2 by B1on1cDog
+http://st0rm.co
 
 A GUI tool written in C# using .NET Framework with the purpose of activating the device with MobileDevice
 # Credits:
